@@ -1,0 +1,16 @@
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/bin/Debug/net9.0/DemoCLI
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/bin/Debug/net9.0/config.json
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/bin/Debug/net9.0/templates.json
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/bin/Debug/net9.0/DemoCLI.deps.json
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/bin/Debug/net9.0/DemoCLI.runtimeconfig.json
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/bin/Debug/net9.0/DemoCLI.dll
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/bin/Debug/net9.0/DemoCLI.pdb
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/obj/Debug/net9.0/DemoCLI.GeneratedMSBuildEditorConfig.editorconfig
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/obj/Debug/net9.0/DemoCLI.AssemblyInfoInputs.cache
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/obj/Debug/net9.0/DemoCLI.AssemblyInfo.cs
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/obj/Debug/net9.0/DemoCLI.csproj.CoreCompileInputs.cache
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/obj/Debug/net9.0/DemoCLI.dll
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/obj/Debug/net9.0/refint/DemoCLI.dll
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/obj/Debug/net9.0/DemoCLI.pdb
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/obj/Debug/net9.0/DemoCLI.genruntimeconfig.cache
+/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/obj/Debug/net9.0/ref/DemoCLI.dll

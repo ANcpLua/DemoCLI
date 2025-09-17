@@ -1,0 +1,47 @@
+[
+  {
+    "Title": "User login functionality",
+    "Description": "As a user, I want to log into the system so that I can access my personalized content",
+    "AcceptanceCriteria": "- User can enter username and password\n- System validates credentials\n- User is redirected to dashboard on success\n- Error message shown on failure",
+    "StoryPoints": 5,
+    "Priority": 2,
+    "Tags": "Authentication; MVP; Security",
+    "State": "New"
+  },
+  {
+    "Title": "Password reset feature",
+    "Description": "As a user, I want to reset my password when I forget it",
+    "AcceptanceCriteria": "- Reset link sent to registered email\n- Link expires after 24 hours\n- Password requirements enforced",
+    "StoryPoints": 3,
+    "Priority": 2,
+    "Tags": "Authentication; Security",
+    "State": "New"
+  },
+  {
+    "Title": "Dashboard display",
+    "Description": "As a user, I want to see a dashboard with my key metrics",
+    "AcceptanceCriteria": "- Shows recent activity\n- Shows key statistics\n- Loads within 2 seconds",
+    "StoryPoints": 8,
+    "Priority": 1,
+    "Tags": "UI; MVP; Performance",
+    "State": "New"
+  },
+  {
+    "Title": "Travel expense submission",
+    "Description": "As an employee, I want to submit travel expenses for reimbursement",
+    "AcceptanceCriteria": "- Can upload receipts\n- Can select expense categories\n- Manager receives notification",
+    "StoryPoints": 5,
+    "Priority": 3,
+    "Tags": "Finance; Expenses",
+    "State": "New"
+  },
+  {
+    "Title": "Review and rating system",
+    "Description": "As a customer, I want to leave reviews and ratings for products",
+    "AcceptanceCriteria": "- 1-5 star rating\n- Text review up to 500 characters\n- Only verified purchases can review",
+    "StoryPoints": 3,
+    "Priority": 3,
+    "Tags": "Reviews; UGC",
+    "State": "New"
+  }
+]

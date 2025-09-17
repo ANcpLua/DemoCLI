@@ -1,0 +1,34 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+
+steps:
+  - task: UseDotNet@2
+    displayName: 'Install .NET 9 SDK'
+    inputs:
+      packageType: 'sdk'
+      version: '9.x'
+      includePreviewVersions: true
+
+  - script: dotnet restore
+    displayName: 'Restore dependencies'
+
+  - script: dotnet build --configuration $(buildConfiguration) --no-restore
+    displayName: 'Build solution'
+
+  - script: dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal
+    displayName: 'Run unit tests'
+
+  - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
+    displayName: 'Publish application'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifacts'
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'drop'

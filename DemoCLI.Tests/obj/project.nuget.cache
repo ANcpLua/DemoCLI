@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "E+8xsGibD3U=",
+  "dgSpecHash": "IwmdM9dh+NI=",
   "success": true,
-  "projectFilePath": "/Users/ancplua/RiderProjects/DemoCLI/DemoCLI.Tests/DemoCLI.Tests.csproj",
+  "projectFilePath": "/Users/ancplua/ConsoleApp2/DemoCLI/DemoCLI.Tests/DemoCLI.Tests.csproj",
   "expectedPackageFiles": [
     "/Users/ancplua/.nuget/packages/coverlet.collector/6.0.2/coverlet.collector.6.0.2.nupkg.sha512",
     "/Users/ancplua/.nuget/packages/microsoft.codecoverage/17.12.0/microsoft.codecoverage.17.12.0.nupkg.sha512",

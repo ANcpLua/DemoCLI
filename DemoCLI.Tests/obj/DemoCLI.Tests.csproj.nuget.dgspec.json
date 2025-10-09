@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/ancplua/RiderProjects/DemoCLI/DemoCLI.Tests/DemoCLI.Tests.csproj": {}
+    "/Users/ancplua/ConsoleApp2/DemoCLI/DemoCLI.Tests/DemoCLI.Tests.csproj": {}
   },
   "projects": {
-    "/Users/ancplua/RiderProjects/DemoCLI/DemoCLI.Tests/DemoCLI.Tests.csproj": {
+    "/Users/ancplua/ConsoleApp2/DemoCLI/DemoCLI.Tests/DemoCLI.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/ancplua/RiderProjects/DemoCLI/DemoCLI.Tests/DemoCLI.Tests.csproj",
+        "projectUniqueName": "/Users/ancplua/ConsoleApp2/DemoCLI/DemoCLI.Tests/DemoCLI.Tests.csproj",
         "projectName": "DemoCLI.Tests",
-        "projectPath": "/Users/ancplua/RiderProjects/DemoCLI/DemoCLI.Tests/DemoCLI.Tests.csproj",
+        "projectPath": "/Users/ancplua/ConsoleApp2/DemoCLI/DemoCLI.Tests/DemoCLI.Tests.csproj",
         "packagesPath": "/Users/ancplua/.nuget/packages/",
-        "outputPath": "/Users/ancplua/RiderProjects/DemoCLI/DemoCLI.Tests/obj/",
+        "outputPath": "/Users/ancplua/ConsoleApp2/DemoCLI/DemoCLI.Tests/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/ancplua/.nuget/NuGet/NuGet.Config"

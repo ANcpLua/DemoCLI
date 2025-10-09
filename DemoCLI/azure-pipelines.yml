@@ -1,5 +1,9 @@
 trigger:
-  - main
+  branches:
+    include:
+      - main
+      - master
+      - develop
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -21,14 +25,33 @@ steps:
   - script: dotnet build --configuration $(buildConfiguration) --no-restore
     displayName: 'Build solution'
 
-  - script: dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal
+  - script: dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal --logger trx --results-directory $(Agent.TempDirectory)
     displayName: 'Run unit tests'
 
-  - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
+  - task: PublishTestResults@2
+    displayName: 'Publish test results'
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: 'VSTest'
+      testResultsFiles: '**/*.trx'
+      searchFolder: '$(Agent.TempDirectory)'
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+
+  - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/publish
     displayName: 'Publish application'
 
-  - task: PublishBuildArtifacts@1
-    displayName: 'Publish Artifacts'
+  - task: ArchiveFiles@2
+    displayName: 'Create ZIP artifact'
     inputs:
-      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/publish'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/DemoCLI-$(Build.BuildId).zip'
+      replaceExistingArchive: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish ZIP artifact'
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)/DemoCLI-$(Build.BuildId).zip'
       artifactName: 'drop'

@@ -1,0 +1,134 @@
+MSE1 APM1 - Übung 3
+===================
+
+Organization: se25m018
+Project: pm1-project
+
+Teil 1: Repository
+------------------
+
+Teil 1: Build Pipeline
+----------------------
+
+Teil 2 & 3: Work Items (User Stories)
+-------------------------------------
+Work Item #30: User Story 5: Reise-Historie als Liste anzeigen
+  State: To Do
+  Description: Als angemeldeter Nutzer möchte ich eine Liste meiner bereits angesehenen Reisen einsehen können, um die Reisen leichter vergleichen zu können.
+
+Work Item #29: User Story 4: Detailansicht der Urlaubsvorschläge
+  State: To Do
+  Description: Als angemeldeter User möchte ich eine Bildvorschau, einen Beschreibungstext der Reise, eine Liste von Nutzerbewertungen und eine durchschnittliche Gesamtwertung der Reise in Form einer Skala von 1-5 Sternen sehen, damit ich mir ein genaueres Bild über das Reiseziel machen kann.
+
+Work Item #28: User Story 3: Reisevorschläge anhand Antworten anzeigen
+  State: To Do
+  Description: Als angemeldeter User möchte ich Vorschläge anhand meiner eingegebenen Antworten bekommen, um meine Auswahl an Urlaubsmöglichkeiten eingrenzen zu können. Als angemeldeter User möchte ich meine Vorschläge in einer Liste mit den Informationen des Hotels, des Ortes und den Kosten der Gesamtreise präsentiert bekommen, damit ich einen oberflächlichen Vergleich der unterschiedlichen Reiseoptionen habe.
+
+Work Item #27: User Story 2: Fragebogen ausfüllen zur Reiseeingrenzung
+  State: To Do
+  Description: Als angemeldeter User möchte ich einen Fragebogen ausfüllen können, um meine Reisevorschläge eingrenzen zu können.
+
+Work Item #26: User Story 1: Benutzeranmeldung mit Username und Passwort
+  State: To Do
+  Description: Als User möchte ich mich mit meinem Username und Passwort anmelden, um personalisierte Daten in der App nutzen zu können.
+
+Work Item #25: User Story 5: Reise-Historie als Liste anzeigen
+  State: To Do
+  Description: Als angemeldeter Nutzer möchte ich eine Liste meiner bereits angesehenen Reisen einsehen können, um die Reisen leichter vergleichen zu können.
+
+Work Item #24: User Story 4: Detailansicht der Urlaubsvorschläge
+  State: To Do
+  Description: Als angemeldeter User möchte ich eine Bildvorschau, einen Beschreibungstext der Reise, eine Liste von Nutzerbewertungen und eine durchschnittliche Gesamtwertung der Reise in Form einer Skala von 1-5 Sternen sehen, damit ich mir ein genaueres Bild über das Reiseziel machen kann.
+
+Work Item #23: User Story 3: Reisevorschläge anhand Antworten anzeigen
+  State: To Do
+  Description: Als angemeldeter User möchte ich Vorschläge anhand meiner eingegebenen Antworten bekommen, um meine Auswahl an Urlaubsmöglichkeiten eingrenzen zu können. Als angemeldeter User möchte ich meine Vorschläge in einer Liste mit den Informationen des Hotels, des Ortes und den Kosten der Gesamtreise präsentiert bekommen, damit ich einen oberflächlichen Vergleich der unterschiedlichen Reiseoptionen habe.
+
+Work Item #22: User Story 2: Fragebogen ausfüllen zur Reiseeingrenzung
+  State: To Do
+  Description: Als angemeldeter User möchte ich einen Fragebogen ausfüllen können, um meine Reisevorschläge eingrenzen zu können.
+
+Work Item #21: User Story 1: Benutzeranmeldung mit Username und Passwort
+  State: To Do
+  Description: Als User möchte ich mich mit meinem Username und Passwort anmelden, um personalisierte Daten in der App nutzen zu können.
+
+Work Item #20: User Story 5: Reise-Historie als Liste anzeigen
+  State: To Do
+  Description: Als angemeldeter Nutzer möchte ich eine Liste meiner bereits angesehenen Reisen einsehen können, um die Reisen leichter vergleichen zu können.
+
+Work Item #19: User Story 4: Detailansicht der Urlaubsvorschläge
+  State: To Do
+  Description: Als angemeldeter User möchte ich eine Bildvorschau, einen Beschreibungstext der Reise, eine Liste von Nutzerbewertungen und eine durchschnittliche Gesamtwertung der Reise in Form einer Skala von 1-5 Sternen sehen, damit ich mir ein genaueres Bild über das Reiseziel machen kann.
+
+Work Item #18: User Story 3: Reisevorschläge anhand Antworten anzeigen
+  State: To Do
+  Description: Als angemeldeter User möchte ich Vorschläge anhand meiner eingegebenen Antworten bekommen, um meine Auswahl an Urlaubsmöglichkeiten eingrenzen zu können. Als angemeldeter User möchte ich meine Vorschläge in einer Liste mit den Informationen des Hotels, des Ortes und den Kosten der Gesamtreise präsentiert bekommen, damit ich einen oberflächlichen Vergleich der unterschiedlichen Reiseoptionen habe.
+
+Work Item #17: User Story 2: Fragebogen ausfüllen zur Reiseeingrenzung
+  State: To Do
+  Description: Als angemeldeter User möchte ich einen Fragebogen ausfüllen können, um meine Reisevorschläge eingrenzen zu können.
+
+Work Item #16: User Story 1: Benutzeranmeldung mit Username und Passwort
+  State: To Do
+  Description: Als User möchte ich mich mit meinem Username und Passwort anmelden, um personalisierte Daten in der App nutzen zu können.
+
+Work Item #15: User Story 5: Reise-Historie als Liste anzeigen
+  State: To Do
+  Description: Als angemeldeter Nutzer möchte ich eine Liste meiner bereits angesehenen Reisen einsehen können, um die Reisen leichter vergleichen zu können.
+
+Work Item #14: User Story 4: Detailansicht der Urlaubsvorschläge
+  State: To Do
+  Description: Als angemeldeter User möchte ich eine Bildvorschau, einen Beschreibungstext der Reise, eine Liste von Nutzerbewertungen und eine durchschnittliche Gesamtwertung der Reise in Form einer Skala von 1-5 Sternen sehen, damit ich mir ein genaueres Bild über das Reiseziel machen kann.
+
+Work Item #13: User Story 3: Reisevorschläge anhand Antworten anzeigen
+  State: To Do
+  Description: Als angemeldeter User möchte ich Vorschläge anhand meiner eingegebenen Antworten bekommen, um meine Auswahl an Urlaubsmöglichkeiten eingrenzen zu können. Als angemeldeter User möchte ich meine Vorschläge in einer Liste mit den Informationen des Hotels, des Ortes und den Kosten der Gesamtreise präsentiert bekommen, damit ich einen oberflächlichen Vergleich der unterschiedlichen Reiseoptionen habe.
+
+Work Item #12: User Story 2: Fragebogen ausfüllen zur Reiseeingrenzung
+  State: To Do
+  Description: Als angemeldeter User möchte ich einen Fragebogen ausfüllen können, um meine Reisevorschläge eingrenzen zu können.
+
+Work Item #11: User Story 1: Benutzeranmeldung mit Username und Passwort
+  State: To Do
+  Description: Als User möchte ich mich mit meinem Username und Passwort anmelden, um personalisierte Daten in der App nutzen zu können.
+
+Work Item #10: User Story 5: Reise-Historie als Liste anzeigen
+  State: To Do
+  Description: Als angemeldeter Nutzer möchte ich eine Liste meiner bereits angesehenen Reisen einsehen können, um die Reisen leichter vergleichen zu können.
+
+Work Item #9: User Story 4: Detailansicht der Urlaubsvorschläge
+  State: To Do
+  Description: Als angemeldeter User möchte ich eine Bildvorschau, einen Beschreibungstext der Reise, eine Liste von Nutzerbewertungen und eine durchschnittliche Gesamtwertung der Reise in Form einer Skala von 1-5 Sternen sehen, damit ich mir ein genaueres Bild über das Reiseziel machen kann.
+
+Work Item #8: User Story 3: Reisevorschläge anhand Antworten anzeigen
+  State: To Do
+  Description: Als angemeldeter User möchte ich Vorschläge anhand meiner eingegebenen Antworten bekommen, um meine Auswahl an Urlaubsmöglichkeiten eingrenzen zu können. Als angemeldeter User möchte ich meine Vorschläge in einer Liste mit den Informationen des Hotels, des Ortes und den Kosten der Gesamtreise präsentiert bekommen, damit ich einen oberflächlichen Vergleich der unterschiedlichen Reiseoptionen habe.
+
+Work Item #7: User Story 2: Fragebogen ausfüllen zur Reiseeingrenzung
+  State: To Do
+  Description: Als angemeldeter User möchte ich einen Fragebogen ausfüllen können, um meine Reisevorschläge eingrenzen zu können.
+
+Work Item #6: User Story 1: Benutzeranmeldung mit Username und Passwort
+  State: To Do
+  Description: Als User möchte ich mich mit meinem Username und Passwort anmelden, um personalisierte Daten in der App nutzen zu können.
+
+Work Item #5: User Story 5: Reise-Historie als Liste anzeigen
+  State: To Do
+  Description: Als angemeldeter Nutzer möchte ich eine Liste meiner bereits angesehenen Reisen einsehen können, um die Reisen leichter vergleichen zu können.
+
+Work Item #4: User Story 4: Detailansicht der Urlaubsvorschläge
+  State: To Do
+  Description: Als angemeldeter User möchte ich eine Bildvorschau, einen Beschreibungstext der Reise, eine Liste von Nutzerbewertungen und eine durchschnittliche Gesamtwertung der Reise in Form einer Skala von 1-5 Sternen sehen, damit ich mir ein genaueres Bild über das Reiseziel machen kann.
+
+Work Item #3: User Story 3: Reisevorschläge anhand Antworten anzeigen
+  State: To Do
+  Description: Als angemeldeter User möchte ich Vorschläge anhand meiner eingegebenen Antworten bekommen, um meine Auswahl an Urlaubsmöglichkeiten eingrenzen zu können. Als angemeldeter User möchte ich meine Vorschläge in einer Liste mit den Informationen des Hotels, des Ortes und den Kosten der Gesamtreise präsentiert bekommen, damit ich einen oberflächlichen Vergleich der unterschiedlichen Reiseoptionen habe.
+
+Work Item #2: User Story 2: Fragebogen ausfüllen zur Reiseeingrenzung
+  State: To Do
+  Description: Als angemeldeter User möchte ich einen Fragebogen ausfüllen können, um meine Reisevorschläge eingrenzen zu können.
+
+Work Item #1: User Story 1: Benutzeranmeldung mit Username und Passwort
+  State: To Do
+  Description: Als User möchte ich mich mit meinem Username und Passwort anmelden, um personalisierte Daten in der App nutzen zu können.
+

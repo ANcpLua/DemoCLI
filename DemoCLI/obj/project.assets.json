@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/DemoCLI.csproj",
+      "projectUniqueName": "/Users/ancplua/ConsoleApp2/DemoCLI/DemoCLI/DemoCLI.csproj",
       "projectName": "DemoCLI",
-      "projectPath": "/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/DemoCLI.csproj",
+      "projectPath": "/Users/ancplua/ConsoleApp2/DemoCLI/DemoCLI/DemoCLI.csproj",
       "packagesPath": "/Users/ancplua/.nuget/packages/",
-      "outputPath": "/Users/ancplua/RiderProjects/DemoCLI/DemoCLI/obj/",
+      "outputPath": "/Users/ancplua/ConsoleApp2/DemoCLI/DemoCLI/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/ancplua/.nuget/NuGet/NuGet.Config"

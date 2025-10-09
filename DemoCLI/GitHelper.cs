@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,12 +12,12 @@ public record GitRef([property: JsonPropertyName("name")] string Name, [property
 public class GitHelper
 {
     private readonly HttpClient _client;
-    private readonly Config _config;
+    private readonly AzureDevOpsSettings _settings;
 
-    public GitHelper(HttpClient client, Config config)
+    public GitHelper(HttpClient client, AzureDevOpsSettings settings)
     {
         _client = client;
-        _config = config;
+        _settings = settings;
     }
 
     public async Task<string> EnsureRepositoryExists()
@@ -33,7 +34,7 @@ public class GitHelper
         }
 
         Console.WriteLine("Creating new repository...");
-        var createResponse = await _client.PostAsJsonAsync("_apis/git/repositories?api-version=7.1", new { name = "DemoCLI" });
+        var createResponse = await _client.PostAsJsonAsync("_apis/git/repositories?api-version=7.1", new { name = _settings.Repository.Name });
         createResponse.EnsureSuccessStatusCode();
 
         var repo = await createResponse.Content.ReadFromJsonAsync<Repository>();
@@ -47,7 +48,7 @@ public class GitHelper
         
         var pushBody = new
         {
-            refUpdates = new[] { new { name = "refs/heads/main", oldObjectId = "0000000000000000000000000000000000000000" } },
+            refUpdates = new[] { new { name = $"refs/heads/{_settings.Repository.MainBranch}", oldObjectId = "0000000000000000000000000000000000000000" } },
             commits = new[]
             {
                 new
@@ -71,7 +72,7 @@ public class GitHelper
 
     public async Task CreateFeatureBranchViaApi(string repoName)
     {
-        var response = await _client.GetAsync($"_apis/git/repositories/{repoName}/refs?filter=heads/main&api-version=7.1");
+        var response = await _client.GetAsync($"_apis/git/repositories/{repoName}/refs?filter=heads/{_settings.Repository.MainBranch}&api-version=7.1");
         response.EnsureSuccessStatusCode();
 
         var refs = await response.Content.ReadFromJsonAsync<AzureDevOpsListResponse<GitRef>>();
@@ -81,7 +82,7 @@ public class GitHelper
         {
             new
             {
-                name = "refs/heads/feature",
+                name = $"refs/heads/{_settings.Repository.FeatureBranch}",
                 oldObjectId = "0000000000000000000000000000000000000000",
                 newObjectId = mainBranch.ObjectId
             }
@@ -95,32 +96,39 @@ public class GitHelper
 
     private List<(string Path, string Content)> GetProjectFiles()
     {
-        var files = new List<(string Path, string Content)>();
-        var projectDir = Path.GetFullPath(".");
+        var solutionDir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), ".."));
+        var gitignorePath = Path.Combine(solutionDir, ".gitignore");
         
-        var filesToInclude = new[]
-        {
-            "Program.cs",
-            "DemoCLI.csproj",
-            "azure-pipelines.yml",
-            "config.example.json",
-            "templates.json",
-            "../DemoCLI.Tests/UnitTest1.cs",
-            "../DemoCLI.Tests/DemoCLI.Tests.csproj",
-            "../DemoCLI.sln"
-        };
+        var excludePatterns = File.Exists(gitignorePath)
+            ? File.ReadAllLines(gitignorePath)
+                .Where(line => !string.IsNullOrWhiteSpace(line) && !line.TrimStart().StartsWith('#'))
+                .Select(line => line.Trim().TrimEnd('/').Replace('/', Path.DirectorySeparatorChar))
+                .ToHashSet()
+            : new HashSet<string> { "bin", "obj" };
 
-        foreach (var file in filesToInclude)
-        {
-            var fullPath = Path.Combine(projectDir, file);
-            if (File.Exists(fullPath))
+        var includePatterns = new[] { "*.cs", "*.csproj", "*.sln", "azure-pipelines.yml", "templates.json", "appsettings.json" };
+
+        return Directory.EnumerateFiles(solutionDir, "*.*", SearchOption.AllDirectories)
+            .Where(file =>
             {
-                var content = File.ReadAllText(fullPath);
-                var relativePath = file.Replace("../", "/");
-                files.Add((relativePath, content));
-            }
-        }
+                var fileName = Path.GetFileName(file);
+                var relativePath = Path.GetRelativePath(solutionDir, file);
+                
+                var isIncluded = includePatterns.Any(pattern =>
+                    pattern.Contains('*')
+                        ? fileName.EndsWith(pattern.TrimStart('*'))
+                        : fileName.Equals(pattern, StringComparison.OrdinalIgnoreCase));
+                
+                var isExcluded = excludePatterns.Any(pattern =>
+                    relativePath.Contains(pattern, StringComparison.OrdinalIgnoreCase) ||
+                    fileName.Equals(pattern, StringComparison.OrdinalIgnoreCase));
 
-        return files;
+                return isIncluded && !isExcluded;
+            })
+            .Select(file => (
+                Path: Path.GetRelativePath(solutionDir, file).Replace(Path.DirectorySeparatorChar, '/'),
+                Content: File.ReadAllText(file)
+            ))
+            .ToList();
     }
 }

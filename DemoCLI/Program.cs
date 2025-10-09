@@ -1,18 +1,27 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using DemoCLI;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
-var config = JsonSerializer.Deserialize<Config>(File.ReadAllText("config.json"))!;
-var templates = JsonSerializer.Deserialize<List<UserStory>>(File.ReadAllText("templates.json"))!;
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false)
+    .AddEnvironmentVariables()
+    .Build();
+
+var settings = configuration.GetSection(AzureDevOpsSettings.SectionName).Get<AzureDevOpsSettings>()!;
+var templates = JsonSerializer.Deserialize<List<UserStory>>(File.ReadAllText(settings.WorkItems.TemplatesPath))!;
 var createdWorkItemIds = new List<int>();
 
 using var client = new HttpClient();
-client.BaseAddress = new Uri($"https://dev.azure.com/{config.Organization}/{config.Project}/");
+client.BaseAddress = new Uri($"https://dev.azure.com/{settings.Organization}/{settings.Project}/");
 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-    Convert.ToBase64String(Encoding.ASCII.GetBytes($"x:{config.PersonalAccessToken}")));
+    Convert.ToBase64String(Encoding.ASCII.GetBytes($"x:{settings.PersonalAccessToken}")));
 
 Console.WriteLine("Setting up Git Repository...");
-var gitHelper = new DemoCLI.GitHelper(client, config);
+var gitHelper = new DemoCLI.GitHelper(client, settings);
 string repoName = await gitHelper.EnsureRepositoryExists();
 
 Console.WriteLine("Pushing code to repository...");
@@ -22,7 +31,7 @@ Console.WriteLine("Creating feature branch...");
 await gitHelper.CreateFeatureBranchViaApi(repoName);
 
 Console.WriteLine("Setting up pipeline...");
-await CreateOrUpdatePipeline(client, config, repoName);
+await CreateOrUpdatePipeline(client, settings, repoName);
 
 Console.WriteLine("Creating Work Items...");
 
@@ -39,7 +48,7 @@ foreach (var story in templates)
     };
 
     var content = new StringContent(JsonSerializer.Serialize(ops), Encoding.UTF8, "application/json-patch+json");
-    var response = await client.PostAsync($"_apis/wit/workitems/${config.WorkItemType}?api-version=7.1", content);
+    var response = await client.PostAsync($"_apis/wit/workitems/${settings.WorkItems.Type}?api-version=7.1", content);
     response.EnsureSuccessStatusCode();
 
     var result = await response.Content.ReadAsStringAsync();
@@ -52,10 +61,10 @@ Console.WriteLine("Creating Pull Request...");
 
 var prBody = new
 {
-    sourceRefName = "refs/heads/feature",
-    targetRefName = "refs/heads/main",
-    title = "Add user stories from template",
-    description = $"Automated PR with {createdWorkItemIds.Count} linked work items",
+    sourceRefName = $"refs/heads/{settings.Repository.FeatureBranch}",
+    targetRefName = $"refs/heads/{settings.Repository.MainBranch}",
+    title = settings.PullRequest.Title,
+    description = string.Format(settings.PullRequest.DescriptionTemplate, createdWorkItemIds.Count),
     workItemRefs = createdWorkItemIds.Select(id => new { id = id.ToString() }).ToArray()
 };
 
@@ -67,7 +76,7 @@ var prResult = await prResponse.Content.ReadAsStringAsync();
 var prId = JsonDocument.Parse(prResult).RootElement.GetProperty("pullRequestId").GetInt32();
 Console.WriteLine($"Created Pull Request #{prId} with {createdWorkItemIds.Count} linked work items");
 
-static async Task CreateOrUpdatePipeline(HttpClient client, Config config, string repoName)
+static async Task CreateOrUpdatePipeline(HttpClient client, AzureDevOpsSettings settings, string repoName)
 {
     var repoResponse = await client.GetAsync($"_apis/git/repositories/{repoName}?api-version=7.1");
     repoResponse.EnsureSuccessStatusCode();
@@ -94,12 +103,12 @@ static async Task CreateOrUpdatePipeline(HttpClient client, Config config, strin
 
     var pipelineJson = JsonSerializer.Serialize(new
     {
-        name = "DemoCLI-Build-Pipeline",
-        folder = "\\",
+        name = settings.Pipeline.Name,
+        folder = settings.Pipeline.Folder ?? "\\",
         configuration = new
         {
             type = "yaml",
-            path = "/azure-pipelines.yml",
+            path = $"/{settings.Pipeline.YamlPath}",
             repository = new { id = repoId, type = "azureReposGit" }
         }
     });
@@ -110,15 +119,7 @@ static async Task CreateOrUpdatePipeline(HttpClient client, Config config, strin
 
     var result = await createResponse.Content.ReadAsStringAsync();
     var pipelineId = JsonDocument.Parse(result).RootElement.GetProperty("id").GetInt32();
-    Console.WriteLine($"Created pipeline #{pipelineId}: DemoCLI-Build-Pipeline");
-}
-
-public class Config
-{
-    public string Organization { get; set; } = "";
-    public string Project { get; set; } = "";
-    public string PersonalAccessToken { get; set; } = "";
-    public string WorkItemType { get; set; } = "";
+    Console.WriteLine($"Created pipeline #{pipelineId}: {settings.Pipeline.Name}");
 }
 
 public class UserStory

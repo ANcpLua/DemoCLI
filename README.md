@@ -1,8 +1,8 @@
-# DemoCLI - Azure DevOps Work Item Creator
+# DemoCLI - Azure DevOps Work Item Creator test
 
 Ein .NET CLI-Tool zum automatischen Erstellen von User Stories in Azure DevOps.
 
-## 🔧 Setup
+## 🔧 Setup 
 
 ### 1. Konfiguration erstellen
 

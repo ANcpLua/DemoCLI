@@ -4,6 +4,22 @@ trigger:
       - main
       - master
       - develop
+      - feature/*
+      - bugfix/*
+      - hotfix/*
+      - release/*
+
+pr:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+  paths:
+    exclude:
+      - README.md
+      - docs/*
+      - '*.md'
 
 pool:
   vmImage: 'ubuntu-latest'

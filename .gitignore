@@ -28,9 +28,11 @@ bld/
 # Sensitive configuration files with tokens
 config.json
 **/config.json
+appsettings.json
+**/appsettings.json
 appsettings.Development.json
 **/appsettings.Development.json
-!config.test.json
+!appsettings.test.json
 !templates*.json
 
 # Environment variables

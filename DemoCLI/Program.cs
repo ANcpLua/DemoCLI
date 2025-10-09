@@ -12,6 +12,8 @@ var configuration = new ConfigurationBuilder()
     .Build();
 
 var settings = configuration.GetSection(AzureDevOpsSettings.SectionName).Get<AzureDevOpsSettings>()!;
+Console.WriteLine($"Loaded settings - Org: {settings.Organization}, Project: {settings.Project}");
+Console.WriteLine($"Token length: {settings.PersonalAccessToken?.Length ?? 0}");
 var templates = JsonSerializer.Deserialize<List<UserStory>>(File.ReadAllText(settings.WorkItems.TemplatesPath))!;
 var createdWorkItemIds = new List<int>();
 
@@ -24,14 +26,20 @@ Console.WriteLine("Setting up Git Repository...");
 var gitHelper = new DemoCLI.GitHelper(client, settings);
 string repoName = await gitHelper.EnsureRepositoryExists();
 
-Console.WriteLine("Pushing code to repository...");
-await gitHelper.PushCodeViaApi(repoName);
+Console.WriteLine("Updating feature branch...");
+await gitHelper.UpdateFeatureBranch(repoName);
 
-Console.WriteLine("Creating feature branch...");
-await gitHelper.CreateFeatureBranchViaApi(repoName);
+Console.WriteLine("Pushing project files to Azure DevOps...");
+await gitHelper.PushProjectFiles(repoName, settings.Repository.MainBranch);
 
 Console.WriteLine("Setting up pipeline...");
-await CreateOrUpdatePipeline(client, settings, repoName);
+var pipelineId = await CreateOrUpdatePipeline(client, settings, repoName);
+
+if (pipelineId.HasValue)
+{
+    Console.WriteLine($"Triggering pipeline #{pipelineId} on {settings.Repository.MainBranch}...");
+    await TriggerPipeline(client, pipelineId.Value, settings.Repository.MainBranch);
+}
 
 Console.WriteLine("Creating Work Items...");
 
@@ -67,6 +75,29 @@ foreach (var story in templates)
 Console.WriteLine($"Created {createdWorkItemIds.Count} work items successfully!");
 
 Console.WriteLine("Creating Pull Request...");
+
+var existingPrResponse = await client.GetAsync($"_apis/git/repositories/{repoName}/pullrequests?searchCriteria.sourceRefName=refs/heads/{settings.Repository.FeatureBranch}&searchCriteria.targetRefName=refs/heads/{settings.Repository.MainBranch}&searchCriteria.status=active&api-version=7.1");
+if (existingPrResponse.IsSuccessStatusCode)
+{
+    var existingPrJson = await existingPrResponse.Content.ReadAsStringAsync();
+    var existingPrs = JsonDocument.Parse(existingPrJson);
+    if (existingPrs.RootElement.GetProperty("count").GetInt32() > 0)
+    {
+        var existingPrId = existingPrs.RootElement.GetProperty("value")[0].GetProperty("pullRequestId").GetInt32();
+        Console.WriteLine($"Pull Request already exists: #{existingPrId}");
+        Console.WriteLine($"Linking work items to existing PR...");
+        
+        foreach (var workItemId in createdWorkItemIds)
+        {
+            var linkBody = new { url = $"https://dev.azure.com/{settings.Organization}/{settings.Project}/_apis/wit/workItems/{workItemId}" };
+            var linkContent = new StringContent(JsonSerializer.Serialize(linkBody), Encoding.UTF8, "application/json");
+            await client.PostAsync($"_apis/git/repositories/{repoName}/pullRequests/{existingPrId}/workitems?api-version=7.1", linkContent);
+        }
+        Console.WriteLine($"Linked {createdWorkItemIds.Count} work items to PR #{existingPrId}");
+        return;
+    }
+}
+
 var prBody = new
 {
     sourceRefName = $"refs/heads/{settings.Repository.FeatureBranch}",
@@ -87,13 +118,15 @@ if (prResponse.IsSuccessStatusCode)
 }
 else
 {
+    var error = await prResponse.Content.ReadAsStringAsync();
     Console.WriteLine($"PR creation failed: {prResponse.StatusCode}");
+    Console.WriteLine($"Error: {error}");
 }
 
 Console.WriteLine("Creating Dashboard...");
 await CreateDashboard(client, settings, createdWorkItemIds);
 
-static async Task CreateOrUpdatePipeline(HttpClient client, AzureDevOpsSettings settings, string repoName)
+static async Task<int?> CreateOrUpdatePipeline(HttpClient client, AzureDevOpsSettings settings, string repoName)
 {
     var repoResponse = await client.GetAsync($"_apis/git/repositories/{repoName}?api-version=7.1");
     repoResponse.EnsureSuccessStatusCode();
@@ -110,10 +143,11 @@ static async Task CreateOrUpdatePipeline(HttpClient client, AzureDevOpsSettings 
         foreach (var pipeline in pipelines.RootElement.GetProperty("value").EnumerateArray())
         {
             var pipelineName = pipeline.GetProperty("name").GetString();
-            if (pipelineName?.Contains("DemoCLI") == true)
+            if (pipelineName == settings.Pipeline.Name)
             {
-                Console.WriteLine($"Pipeline already exists: {pipelineName}");
-                return;
+                var pipelineId = pipeline.GetProperty("id").GetInt32();
+                Console.WriteLine($"Pipeline already exists: {pipelineName} (ID: {pipelineId})");
+                return pipelineId;
             }
         }
     }
@@ -126,7 +160,7 @@ static async Task CreateOrUpdatePipeline(HttpClient client, AzureDevOpsSettings 
         {
             type = "yaml",
             path = $"/{settings.Pipeline.YamlPath}",
-            repository = new { id = repoId, type = "azureReposGit" }
+            repository = new { id = repoId, name = repoName, type = "azureReposGit" }
         }
     });
 
@@ -138,10 +172,45 @@ static async Task CreateOrUpdatePipeline(HttpClient client, AzureDevOpsSettings 
         var result = await createResponse.Content.ReadAsStringAsync();
         var pipelineId = JsonDocument.Parse(result).RootElement.GetProperty("id").GetInt32();
         Console.WriteLine($"Created pipeline #{pipelineId}: {settings.Pipeline.Name}");
+        return pipelineId;
     }
     else
     {
         Console.WriteLine($"Pipeline creation failed: {createResponse.StatusCode}");
+        return null;
+    }
+}
+
+static async Task TriggerPipeline(HttpClient client, int pipelineId, string branchName)
+{
+    var runBody = new
+    {
+        resources = new
+        {
+            repositories = new
+            {
+                self = new
+                {
+                    refName = $"refs/heads/{branchName}"
+                }
+            }
+        }
+    };
+
+    var content = new StringContent(JsonSerializer.Serialize(runBody), Encoding.UTF8, "application/json");
+    var response = await client.PostAsync($"_apis/pipelines/{pipelineId}/runs?api-version=7.1", content);
+    
+    if (response.IsSuccessStatusCode)
+    {
+        var result = await response.Content.ReadAsStringAsync();
+        var runId = JsonDocument.Parse(result).RootElement.GetProperty("id").GetInt32();
+        Console.WriteLine($"Pipeline run #{runId} triggered successfully");
+    }
+    else
+    {
+        var error = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"Pipeline trigger failed: {response.StatusCode}");
+        Console.WriteLine($"Error: {error}");
     }
 }
 

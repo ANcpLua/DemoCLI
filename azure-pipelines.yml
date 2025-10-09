@@ -19,13 +19,13 @@ steps:
       version: '9.x'
       includePreviewVersions: true
 
-  - script: dotnet restore
+  - script: dotnet restore DemoCLI.sln
     displayName: 'Restore dependencies'
 
-  - script: dotnet build --configuration $(buildConfiguration) --no-restore
+  - script: dotnet build DemoCLI.sln --configuration $(buildConfiguration) --no-restore
     displayName: 'Build solution'
 
-  - script: dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal --logger trx --results-directory $(Agent.TempDirectory)
+  - script: dotnet test DemoCLI.sln --configuration $(buildConfiguration) --no-build --verbosity normal --logger trx --results-directory $(Agent.TempDirectory)
     displayName: 'Run unit tests'
 
   - task: PublishTestResults@2
@@ -38,7 +38,7 @@ steps:
       mergeTestResults: true
       failTaskOnFailedTests: true
 
-  - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/publish
+  - script: dotnet publish DemoCLI.sln --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/publish
     displayName: 'Publish application'
 
   - task: ArchiveFiles@2

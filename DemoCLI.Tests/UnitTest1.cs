@@ -8,7 +8,7 @@ public class UnitTest1
     public void CanLoadConfigFromJson()
     {
         // Act
-        var json = File.ReadAllText("config.test.json");
+        var json = File.ReadAllText("appsettings.test.json");
         var config = JsonSerializer.Deserialize<Config>(json);
 
         // Assert

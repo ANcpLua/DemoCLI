@@ -22,7 +22,10 @@ public class GitHelper
 
     public async Task<string> EnsureRepositoryExists()
     {
+        Console.WriteLine($"Calling: {_client.BaseAddress}_apis/git/repositories?api-version=7.1");
+        Console.WriteLine($"Auth header: {_client.DefaultRequestHeaders.Authorization}");
         var response = await _client.GetAsync("_apis/git/repositories?api-version=7.1");
+        Console.WriteLine($"Response status: {response.StatusCode}");
         response.EnsureSuccessStatusCode();
         
         var repos = await response.Content.ReadFromJsonAsync<AzureDevOpsListResponse<Repository>>();
@@ -49,54 +52,38 @@ public class GitHelper
         return repo.Name;
     }
 
-    public async Task PushCodeViaApi(string repoName)
+    public async Task UpdateFeatureBranch(string repoName)
     {
-        var refsResponse = await _client.GetAsync($"_apis/git/repositories/{repoName}/refs?filter=heads/{_settings.Repository.MainBranch}&api-version=7.1");
+        var mainRefResponse = await _client.GetAsync($"_apis/git/repositories/{repoName}/refs?filter=heads/{_settings.Repository.MainBranch}&api-version=7.1");
+        mainRefResponse.EnsureSuccessStatusCode();
+        var mainRefs = await mainRefResponse.Content.ReadFromJsonAsync<AzureDevOpsListResponse<GitRef>>();
+        var mainCommit = mainRefs!.Value[0].ObjectId;
+
+        var featureRefResponse = await _client.GetAsync($"_apis/git/repositories/{repoName}/refs?filter=heads/{_settings.Repository.FeatureBranch}&api-version=7.1");
         
-        if (refsResponse.IsSuccessStatusCode)
+        if (featureRefResponse.IsSuccessStatusCode)
         {
-            var refsJson = await refsResponse.Content.ReadAsStringAsync();
-            var refs = JsonDocument.Parse(refsJson);
-            if (refs.RootElement.GetProperty("value").GetArrayLength() > 0)
+            var featureRefs = await featureRefResponse.Content.ReadFromJsonAsync<AzureDevOpsListResponse<GitRef>>();
+            if (featureRefs!.Value.Length > 0)
             {
-                Console.WriteLine($"Branch {_settings.Repository.MainBranch} already exists, skipping push");
+                var oldCommit = featureRefs.Value[0].ObjectId;
+                var updateBody = new[]
+                {
+                    new
+                    {
+                        name = $"refs/heads/{_settings.Repository.FeatureBranch}",
+                        oldObjectId = oldCommit,
+                        newObjectId = mainCommit
+                    }
+                };
+                
+                var updateContent = new StringContent(JsonSerializer.Serialize(updateBody), Encoding.UTF8, "application/json");
+                var updateResponse = await _client.PostAsync($"_apis/git/repositories/{repoName}/refs?api-version=7.1", updateContent);
+                updateResponse.EnsureSuccessStatusCode();
+                Console.WriteLine($"Updated feature branch to match {_settings.Repository.MainBranch}");
                 return;
             }
         }
-
-        var files = GetProjectFiles();
-        
-        var pushBody = new
-        {
-            refUpdates = new[] { new { name = $"refs/heads/{_settings.Repository.MainBranch}", oldObjectId = "0000000000000000000000000000000000000000" } },
-            commits = new[]
-            {
-                new
-                {
-                    comment = "Initial commit with DemoCLI project",
-                    changes = files.Select(f => new
-                    {
-                        changeType = "add",
-                        item = new { path = f.Path },
-                        newContent = new { content = f.Content, contentType = "rawtext" }
-                    }).ToArray()
-                }
-            }
-        };
-
-        var response = await _client.PostAsJsonAsync($"_apis/git/repositories/{repoName}/pushes?api-version=7.1", pushBody);
-        response.EnsureSuccessStatusCode();
-        
-        Console.WriteLine("Code pushed to Azure DevOps via API");
-    }
-
-    public async Task CreateFeatureBranchViaApi(string repoName)
-    {
-        var response = await _client.GetAsync($"_apis/git/repositories/{repoName}/refs?filter=heads/{_settings.Repository.MainBranch}&api-version=7.1");
-        response.EnsureSuccessStatusCode();
-
-        var refs = await response.Content.ReadFromJsonAsync<AzureDevOpsListResponse<GitRef>>();
-        var mainBranch = refs!.Value[0];
 
         var branchBody = new[]
         {
@@ -104,51 +91,154 @@ public class GitHelper
             {
                 name = $"refs/heads/{_settings.Repository.FeatureBranch}",
                 oldObjectId = "0000000000000000000000000000000000000000",
-                newObjectId = mainBranch.ObjectId
+                newObjectId = mainCommit
             }
         };
 
-        var branchResponse = await _client.PostAsJsonAsync($"_apis/git/repositories/{repoName}/refs?api-version=7.1", branchBody);
+        var branchContent = new StringContent(JsonSerializer.Serialize(branchBody), Encoding.UTF8, "application/json");
+        var branchResponse = await _client.PostAsync($"_apis/git/repositories/{repoName}/refs?api-version=7.1", branchContent);
         branchResponse.EnsureSuccessStatusCode();
-        
-        Console.WriteLine("Feature branch created via API");
+        Console.WriteLine($"Created feature branch from {_settings.Repository.MainBranch}");
     }
 
-    private List<(string Path, string Content)> GetProjectFiles()
+    public async Task PushYamlFile(string repoName, string branchName)
     {
-        var solutionDir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../.."));
-        var gitignorePath = Path.Combine(solutionDir, ".gitignore");
+        var refResponse = await _client.GetAsync($"_apis/git/repositories/{repoName}/refs?filter=heads/{branchName}&api-version=7.1");
+        refResponse.EnsureSuccessStatusCode();
+        var refs = await refResponse.Content.ReadFromJsonAsync<AzureDevOpsListResponse<GitRef>>();
+        var currentCommit = refs!.Value[0].ObjectId;
+
+        var yamlPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../azure-pipelines.yml"));
+        if (!File.Exists(yamlPath))
+        {
+            Console.WriteLine($"YAML file not found at: {yamlPath}");
+            return;
+        }
         
-        var excludePatterns = File.Exists(gitignorePath)
-            ? File.ReadAllLines(gitignorePath)
-                .Where(line => !string.IsNullOrWhiteSpace(line) && !line.TrimStart().StartsWith('#'))
-                .Select(line => line.Trim().TrimEnd('/').Replace('/', Path.DirectorySeparatorChar))
-                .ToHashSet()
-            : new HashSet<string> { "bin", "obj", ".git" };
+        var yamlContent = File.ReadAllText(yamlPath);
 
-        var includePatterns = new[] { "*.cs", "*.csproj", "*.sln", "azure-pipelines.yml", "templates.json", "appsettings.json", ".gitignore" };
+        var itemResponse = await _client.GetAsync($"_apis/git/repositories/{repoName}/items?path=/azure-pipelines.yml&api-version=7.1");
+        var changeType = itemResponse.IsSuccessStatusCode ? "edit" : "add";
 
-        return Directory.EnumerateFiles(solutionDir, "*.*", SearchOption.AllDirectories)
-            .Where(file =>
+        var pushBody = new
+        {
+            refUpdates = new[] { new { name = $"refs/heads/{branchName}", oldObjectId = currentCommit } },
+            commits = new[]
             {
-                var fileName = Path.GetFileName(file);
-                var relativePath = Path.GetRelativePath(solutionDir, file);
-                
-                var isIncluded = includePatterns.Any(pattern =>
-                    pattern.Contains('*')
-                        ? fileName.EndsWith(pattern.TrimStart('*'))
-                        : fileName.Equals(pattern, StringComparison.OrdinalIgnoreCase));
-                
-                var isExcluded = excludePatterns.Any(pattern =>
-                    relativePath.Contains(pattern, StringComparison.OrdinalIgnoreCase) ||
-                    fileName.Equals(pattern, StringComparison.OrdinalIgnoreCase));
+                new
+                {
+                    comment = changeType == "add" ? "Add azure-pipelines.yml" : "Update azure-pipelines.yml",
+                    changes = new[]
+                    {
+                        new
+                        {
+                            changeType = changeType,
+                            item = new { path = "/azure-pipelines.yml" },
+                            newContent = new { content = yamlContent, contentType = "rawtext" }
+                        }
+                    }
+                }
+            }
+        };
 
-                return isIncluded && !isExcluded;
-            })
-            .Select(file => (
-                Path: Path.GetRelativePath(solutionDir, file).Replace(Path.DirectorySeparatorChar, '/'),
-                Content: File.ReadAllText(file)
-            ))
-            .ToList();
+        var pushContent = new StringContent(JsonSerializer.Serialize(pushBody), Encoding.UTF8, "application/json");
+        var pushResponse = await _client.PostAsync($"_apis/git/repositories/{repoName}/pushes?api-version=7.1", pushContent);
+        
+        if (pushResponse.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"Pushed azure-pipelines.yml to {branchName} branch");
+        }
+        else
+        {
+            var error = await pushResponse.Content.ReadAsStringAsync();
+            Console.WriteLine($"Failed to push YAML: {pushResponse.StatusCode}");
+            Console.WriteLine($"Error: {error}");
+        }
+    }
+
+    public async Task PushProjectFiles(string repoName, string branchName)
+    {
+        var refResponse = await _client.GetAsync($"_apis/git/repositories/{repoName}/refs?filter=heads/{branchName}&api-version=7.1");
+        refResponse.EnsureSuccessStatusCode();
+        var refs = await refResponse.Content.ReadFromJsonAsync<AzureDevOpsListResponse<GitRef>>();
+        var currentCommit = refs!.Value[0].ObjectId;
+
+        var projectRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), ".."));
+        var files = GetProjectFiles(projectRoot);
+
+        if (files.Count == 0)
+        {
+            Console.WriteLine("No project files found to push");
+            return;
+        }
+
+        var changes = new List<object>();
+        foreach (var (path, content) in files)
+        {
+            var itemResponse = await _client.GetAsync($"_apis/git/repositories/{repoName}/items?path=/{path}&api-version=7.1");
+            var changeType = itemResponse.IsSuccessStatusCode ? "edit" : "add";
+
+            changes.Add(new
+            {
+                changeType = changeType,
+                item = new { path = $"/{path}" },
+                newContent = new { content = content, contentType = "rawtext" }
+            });
+        }
+
+        var pushBody = new
+        {
+            refUpdates = new[] { new { name = $"refs/heads/{branchName}", oldObjectId = currentCommit } },
+            commits = new[]
+            {
+                new
+                {
+                    comment = "Update project files and pipeline configuration",
+                    changes = changes.ToArray()
+                }
+            }
+        };
+
+        var pushContent = new StringContent(JsonSerializer.Serialize(pushBody), Encoding.UTF8, "application/json");
+        var pushResponse = await _client.PostAsync($"_apis/git/repositories/{repoName}/pushes?api-version=7.1", pushContent);
+        
+        if (pushResponse.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"Pushed {files.Count} files to {branchName} branch");
+        }
+        else
+        {
+            var error = await pushResponse.Content.ReadAsStringAsync();
+            Console.WriteLine($"Failed to push files: {pushResponse.StatusCode}");
+            Console.WriteLine($"Error: {error}");
+        }
+    }
+
+    private List<(string Path, string Content)> GetProjectFiles(string projectRoot)
+    {
+        var files = new List<(string, string)>();
+        var includePatterns = new[] { "*.cs", "*.csproj", "*.sln", "azure-pipelines.yml", "*.json", ".gitignore" };
+        var excludePatterns = new HashSet<string> { "bin", "obj", ".git", ".vs", "appsettings.json" };
+
+        foreach (var file in Directory.EnumerateFiles(projectRoot, "*.*", SearchOption.AllDirectories))
+        {
+            var fileName = Path.GetFileName(file);
+            var relativePath = Path.GetRelativePath(projectRoot, file);
+            
+            var isIncluded = includePatterns.Any(pattern =>
+                pattern.Contains('*')
+                    ? fileName.EndsWith(pattern.TrimStart('*'))
+                    : fileName.Equals(pattern, StringComparison.OrdinalIgnoreCase));
+            
+            var isExcluded = excludePatterns.Any(pattern =>
+                relativePath.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+
+            if (isIncluded && !isExcluded)
+            {
+                files.Add((relativePath.Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(file)));
+            }
+        }
+
+        return files;
     }
 }

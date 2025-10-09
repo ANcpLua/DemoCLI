@@ -29,13 +29,20 @@ public class GitHelper
         
         if (repos!.Value.Length > 0)
         {
-            Console.WriteLine($"Using existing repository: {repos.Value[0].Name}");
-            return repos.Value[0].Name;
+            var existingRepo = repos.Value.FirstOrDefault(r => r.Name.Equals(_settings.Repository.Name, StringComparison.OrdinalIgnoreCase)) 
+                ?? repos.Value[0];
+            Console.WriteLine($"Using existing repository: {existingRepo.Name}");
+            return existingRepo.Name;
         }
 
-        Console.WriteLine("Creating new repository...");
+        Console.WriteLine("No repositories found. Creating new repository...");
         var createResponse = await _client.PostAsJsonAsync("_apis/git/repositories?api-version=7.1", new { name = _settings.Repository.Name });
-        createResponse.EnsureSuccessStatusCode();
+        
+        if (!createResponse.IsSuccessStatusCode)
+        {
+            var error = await createResponse.Content.ReadAsStringAsync();
+            throw new InvalidOperationException($"Failed to create repository. Status: {createResponse.StatusCode}. Error: {error}. Please create a repository manually in Azure DevOps.");
+        }
 
         var repo = await createResponse.Content.ReadFromJsonAsync<Repository>();
         Console.WriteLine($"Created repository: {repo!.Name}");

@@ -51,6 +51,19 @@ public class GitHelper
 
     public async Task PushCodeViaApi(string repoName)
     {
+        var refsResponse = await _client.GetAsync($"_apis/git/repositories/{repoName}/refs?filter=heads/{_settings.Repository.MainBranch}&api-version=7.1");
+        
+        if (refsResponse.IsSuccessStatusCode)
+        {
+            var refsJson = await refsResponse.Content.ReadAsStringAsync();
+            var refs = JsonDocument.Parse(refsJson);
+            if (refs.RootElement.GetProperty("value").GetArrayLength() > 0)
+            {
+                Console.WriteLine($"Branch {_settings.Repository.MainBranch} already exists, skipping push");
+                return;
+            }
+        }
+
         var files = GetProjectFiles();
         
         var pushBody = new
@@ -103,7 +116,7 @@ public class GitHelper
 
     private List<(string Path, string Content)> GetProjectFiles()
     {
-        var solutionDir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), ".."));
+        var solutionDir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../.."));
         var gitignorePath = Path.Combine(solutionDir, ".gitignore");
         
         var excludePatterns = File.Exists(gitignorePath)
@@ -111,9 +124,9 @@ public class GitHelper
                 .Where(line => !string.IsNullOrWhiteSpace(line) && !line.TrimStart().StartsWith('#'))
                 .Select(line => line.Trim().TrimEnd('/').Replace('/', Path.DirectorySeparatorChar))
                 .ToHashSet()
-            : new HashSet<string> { "bin", "obj" };
+            : new HashSet<string> { "bin", "obj", ".git" };
 
-        var includePatterns = new[] { "*.cs", "*.csproj", "*.sln", "azure-pipelines.yml", "templates.json", "appsettings.json" };
+        var includePatterns = new[] { "*.cs", "*.csproj", "*.sln", "azure-pipelines.yml", "templates.json", "appsettings.json", ".gitignore" };
 
         return Directory.EnumerateFiles(solutionDir, "*.*", SearchOption.AllDirectories)
             .Where(file =>

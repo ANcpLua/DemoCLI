@@ -20,7 +20,18 @@ client.BaseAddress = new Uri($"https://dev.azure.com/{settings.Organization}/{se
 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
     Convert.ToBase64String(Encoding.ASCII.GetBytes($"x:{settings.PersonalAccessToken}")));
 
-Console.WriteLine("Creating Azure DevOps Dashboard...");
+Console.WriteLine("Setting up Git Repository...");
+var gitHelper = new DemoCLI.GitHelper(client, settings);
+string repoName = await gitHelper.EnsureRepositoryExists();
+
+Console.WriteLine("Pushing code to repository...");
+await gitHelper.PushCodeViaApi(repoName);
+
+Console.WriteLine("Creating feature branch...");
+await gitHelper.CreateFeatureBranchViaApi(repoName);
+
+Console.WriteLine("Setting up pipeline...");
+await CreateOrUpdatePipeline(client, settings, repoName);
 
 Console.WriteLine("Creating Work Items...");
 
@@ -38,7 +49,14 @@ foreach (var story in templates)
 
     var content = new StringContent(JsonSerializer.Serialize(ops), Encoding.UTF8, "application/json-patch+json");
     var response = await client.PostAsync($"_apis/wit/workitems/${settings.WorkItems.Type}?api-version=7.1", content);
-    response.EnsureSuccessStatusCode();
+    
+    if (!response.IsSuccessStatusCode)
+    {
+        var error = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"Failed to create work item: {response.StatusCode}");
+        Console.WriteLine($"Error: {error}");
+        throw new Exception($"Work item creation failed: {error}");
+    }
 
     var result = await response.Content.ReadAsStringAsync();
     var id = JsonDocument.Parse(result).RootElement.GetProperty("id").GetInt32();
@@ -48,8 +66,84 @@ foreach (var story in templates)
 
 Console.WriteLine($"Created {createdWorkItemIds.Count} work items successfully!");
 
+Console.WriteLine("Creating Pull Request...");
+var prBody = new
+{
+    sourceRefName = $"refs/heads/{settings.Repository.FeatureBranch}",
+    targetRefName = $"refs/heads/{settings.Repository.MainBranch}",
+    title = settings.PullRequest.Title,
+    description = string.Format(settings.PullRequest.DescriptionTemplate, createdWorkItemIds.Count),
+    workItemRefs = createdWorkItemIds.Select(id => new { id = id.ToString() }).ToArray()
+};
+
+var prContent = new StringContent(JsonSerializer.Serialize(prBody), Encoding.UTF8, "application/json");
+var prResponse = await client.PostAsync($"_apis/git/repositories/{repoName}/pullrequests?api-version=7.1", prContent);
+
+if (prResponse.IsSuccessStatusCode)
+{
+    var prResult = await prResponse.Content.ReadAsStringAsync();
+    var prId = JsonDocument.Parse(prResult).RootElement.GetProperty("pullRequestId").GetInt32();
+    Console.WriteLine($"Created Pull Request #{prId} with {createdWorkItemIds.Count} linked work items");
+}
+else
+{
+    Console.WriteLine($"PR creation failed: {prResponse.StatusCode}");
+}
+
 Console.WriteLine("Creating Dashboard...");
 await CreateDashboard(client, settings, createdWorkItemIds);
+
+static async Task CreateOrUpdatePipeline(HttpClient client, AzureDevOpsSettings settings, string repoName)
+{
+    var repoResponse = await client.GetAsync($"_apis/git/repositories/{repoName}?api-version=7.1");
+    repoResponse.EnsureSuccessStatusCode();
+    
+    var repoJson = await repoResponse.Content.ReadAsStringAsync();
+    var repoId = JsonDocument.Parse(repoJson).RootElement.GetProperty("id").GetString();
+
+    var pipelinesResponse = await client.GetAsync("_apis/pipelines?api-version=7.1");
+    if (pipelinesResponse.IsSuccessStatusCode)
+    {
+        var pipelinesJson = await pipelinesResponse.Content.ReadAsStringAsync();
+        var pipelines = JsonDocument.Parse(pipelinesJson);
+        
+        foreach (var pipeline in pipelines.RootElement.GetProperty("value").EnumerateArray())
+        {
+            var pipelineName = pipeline.GetProperty("name").GetString();
+            if (pipelineName?.Contains("DemoCLI") == true)
+            {
+                Console.WriteLine($"Pipeline already exists: {pipelineName}");
+                return;
+            }
+        }
+    }
+
+    var pipelineJson = JsonSerializer.Serialize(new
+    {
+        name = settings.Pipeline.Name,
+        folder = settings.Pipeline.Folder ?? "\\",
+        configuration = new
+        {
+            type = "yaml",
+            path = $"/{settings.Pipeline.YamlPath}",
+            repository = new { id = repoId, type = "azureReposGit" }
+        }
+    });
+
+    var pipelineContent = new StringContent(pipelineJson, Encoding.UTF8, "application/json");
+    var createResponse = await client.PostAsync("_apis/pipelines?api-version=7.1", pipelineContent);
+    
+    if (createResponse.IsSuccessStatusCode)
+    {
+        var result = await createResponse.Content.ReadAsStringAsync();
+        var pipelineId = JsonDocument.Parse(result).RootElement.GetProperty("id").GetInt32();
+        Console.WriteLine($"Created pipeline #{pipelineId}: {settings.Pipeline.Name}");
+    }
+    else
+    {
+        Console.WriteLine($"Pipeline creation failed: {createResponse.StatusCode}");
+    }
+}
 
 static async Task CreateDashboard(HttpClient client, AzureDevOpsSettings settings, List<int> workItemIds)
 {

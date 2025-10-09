@@ -67,10 +67,6 @@ var prResult = await prResponse.Content.ReadAsStringAsync();
 var prId = JsonDocument.Parse(prResult).RootElement.GetProperty("pullRequestId").GetInt32();
 Console.WriteLine($"Created Pull Request #{prId} with {createdWorkItemIds.Count} linked work items");
 
-Console.WriteLine("Generating report...");
-var pdfGenerator = new DemoCLI.PdfGenerator(client, config);
-await pdfGenerator.GenerateReportData("report.txt");
-
 static async Task CreateOrUpdatePipeline(HttpClient client, Config config, string repoName)
 {
     var repoResponse = await client.GetAsync($"_apis/git/repositories/{repoName}?api-version=7.1");
